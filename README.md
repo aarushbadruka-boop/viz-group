@@ -18,8 +18,9 @@ npx serve .          # or: python3 -m http.server 8000
 
 ## Deploy
 
-No build step. Push to GitHub and enable **Settings → Pages → Deploy from branch** (root), or upload the folder to any
-static host. Three.js r186 is vendored and minified in `vendor/three/`, so there are no runtime CDN dependencies
+`.github/workflows/pages.yml` publishes the site to GitHub Pages on every push to `main` (or the current working
+branch), and can be run by hand from the Actions tab. One-time setup: **Settings → Pages → Source: GitHub Actions**.
+There is no build step, so the folder also works on any static host. Three.js r186 is vendored and minified in `vendor/three/`, so there are no runtime CDN dependencies
 apart from Google Fonts.
 
 ## Structure
