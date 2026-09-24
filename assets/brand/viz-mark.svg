@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" role="img" aria-label="VIZ">
+  <!-- PLACEHOLDER lettermark — replace with the official VIZ vector logo -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#007AFF"/>
+      <stop offset="1" stop-color="#1F77C4"/>
+    </linearGradient>
+  </defs>
+  <g transform="matrix(1 0 -0.22 1 18 0)" fill="url(#g)">
+    <path d="M0 8h20l16 44 16-44h20L46 72H26z"/>
+    <path d="M80 8h18v64H80z"/>
+    <path d="M106 8h64v14l-32 30h32v20h-64V58l32-30h-32z"/>
+  </g>
+  <path d="M4 78c10 0 10-5 20-5s10 5 20 5 10-5 20-5 10 5 20 5" fill="none" stroke="#FFD204" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

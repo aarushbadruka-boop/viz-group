@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How a VIZ Capacitor Is Made — Interactive 3D</title>
+  <meta name="description" content="An interactive 3D walkthrough of how VIZ Technologies manufactures a metallized polypropylene (MPP) power capacitor — from film slitting to the overpressure disconnector." />
+  <meta name="theme-color" content="#0F263A" />
+  <script>document.documentElement.classList.add('js');</script>
+  <link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Raleway:wght@400;500;700;800;900&family=Roboto:wght@500&display=swap" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/factory.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons": "./vendor/three/addons.min.js" } }
+  </script>
+  <style>
+    body { background: var(--navy-950); color: #fff; }
+    .immersive { min-height: 100svh; display: flex; flex-direction: column; padding: 16px; gap: 16px; }
+    .immersive__bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 8px; }
+    .immersive__title { font-weight: 800; font-size: clamp(1rem, 2vw, 1.25rem); }
+    .immersive__title span { color: var(--on-dark-55); font-weight: 500; }
+    .immersive .vf { flex: 1; display: flex; flex-direction: column; }
+    .immersive .vf-viewport { flex: 1; height: auto; min-height: 480px; }
+    @media (max-width: 680px) { .immersive { padding: 8px; } .immersive .vf-viewport { min-height: 0; } }
+  </style>
+</head>
+<body>
+  <main class="immersive">
+    <div class="immersive__bar">
+      <a class="brand" href="index.html" aria-label="VIZ Technologies — home">
+        <svg class="brand__mark" viewBox="0 0 200 80" aria-hidden="true">
+          <g transform="matrix(1 0 -0.22 1 18 0)" fill="#2E9BFF">
+            <path d="M0 8h20l16 44 16-44h20L46 72H26z" /><path d="M80 8h18v64H80z" /><path d="M106 8h64v14l-32 30h32v20h-64V58l32-30h-32z" />
+          </g>
+          <path class="brand__wave" d="M4 78c10 0 10-5 20-5s10 5 20 5 10-5 20-5 10 5 20 5" fill="none" stroke="#FFD204" stroke-width="2.6" stroke-linecap="round" />
+        </svg>
+      </a>
+      <h1 class="immersive__title">From film to finished capacitor <span>· interactive 3D</span></h1>
+      <a class="btn btn--ghost btn--sm" href="index.html#products">Products</a>
+    </div>
+    <div id="factory" tabindex="-1"></div>
+  </main>
+  <script type="module">
+    import { CapacitorFactory } from './js/factory/capacitor-factory.js';
+    const el = document.getElementById('factory');
+    // ?stage=4 deep-links to a stage (1-based)
+    const stage = parseInt(new URLSearchParams(location.search).get('stage'), 10);
+    el.vizFactory = new CapacitorFactory(el, { stageDuration: 7, startAt: Number.isFinite(stage) ? stage - 1 + 0.001 : 0 });
+  </script>
+</body>
+</html>
