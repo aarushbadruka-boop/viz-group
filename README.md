@@ -61,8 +61,6 @@ Touch devices start with rotate off so the page still scrolls; the ⟲ button en
 
 ## Placeholders to replace before launch
 
-- **Logo:** `assets/brand/viz-mark.svg` and the inline header/footer SVGs are a *placeholder* VIZ lettermark.
-  Swap in the official vector logo.
 - **Client logos:** the ticker uses text wordmarks. Drop official logo files into each `<li class="logo-word">` as
   `<img>`; the CSS already handles greyscale → colour on hover.
 - **Product ratings:** only the featured VECOCA3AU0055B tile uses verified values (copied from the product label).

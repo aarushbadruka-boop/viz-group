@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 0 160 210" width="480" height="630" role="img" aria-label="VIZ">
+  <title>VIZ Technologies</title>
+  <g fill="#0265BA">
+    <polygon points="90,21 72,194 55,194 36,99 52,77 63,148 75,41"/>
+    <polygon points="96,64 101,58 110,68 110,194 96,194"/>
+    <polygon points="119,36 128,45 164,97 164,115 136,164 164,174 164,194 117,194 117,157 144,97 119,68"/>
+  </g>
+  <polygon fill="#E71E24" points="99,6 110,21 110,51 100,41 96,41 96,17"/>
+</svg>
