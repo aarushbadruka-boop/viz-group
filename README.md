@@ -39,7 +39,7 @@ js/factory/film-strip.js film ribbon geometry shared by all stations
 js/factory/stages.js    stage copy, simulated telemetry and camera presets
 js/factory/particles.js GPU particle emitter (zinc spray, weld sparks, bubbles, tear-off sparks)
 js/factory/factory-ui.js HUD / timeline DOM layer
-assets/                 product photo (background removed), OG image, brand SVGs
+assets/                 product photos (img/products), hero photo (background removed), OG image, brand SVGs
 ```
 
 ## 3D manufacturing component
@@ -70,9 +70,13 @@ Touch devices start with rotate off so the page still scrolls; the ⟲ button en
 
 - **Client logos:** the ticker uses text wordmarks. Drop official logo files into each `<li class="logo-word">` as
   `<img>`; the CSS already handles greyscale → colour on hover.
-- **Product ratings:** only the featured VECOCA3AU0055B tile uses verified values (copied from the product label).
-  All other kVAr / voltage / temperature-class values are **indicative placeholders** and must be checked against
-  VIZ datasheets.
-- **Downloads:** rows open a pre-filled email to sales@viztechnologies.biz until the PDFs are supplied.
+- **Product ratings:** values on the tiles come from the original viztechnologies.biz pages; the Viz PQS cards and
+  the featured VECOCA3AU0055B tile are read off the product labels in the photos. Tiles without a spec strip
+  (super heavy / standard / basic duty, reactors, fan, segmented film, motor start) had no published ratings.
+- **Downloads:** link to the PDFs still hosted on the old WordPress site (viztechnologies.biz/wp-content/…).
+  Copy them into `assets/downloads/` and repoint the links before the old site is retired. "Selection table for
+  individual PFC for motors" pointed at a demo.fgrade.net host on the old site and may be dead.
+- **Product photos:** `assets/img/products/` holds 10 photos from the "Capacitor Pictures" Drive folder (trimmed,
+  ≤ 900 px WebP). Eight originals over 7 MB (EAE_4146, 4196, 4201, 4203, 4207, 4211, 4214, 4227) were not imported.
 - **Contact form:** composes an email (mailto). Connect a form backend if submissions should be stored.
 - **3D telemetry** is labelled as simulated and is illustrative, not plant data.
