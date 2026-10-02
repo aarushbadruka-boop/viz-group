@@ -3,9 +3,12 @@
  * metallized-polypropylene (MPP) cylindrical power capacitor is made.
  *
  * Architecture
- *   • The whole scene is a pure function of one number, T ∈ [0, 7]
+ *   • The whole scene is a pure function of one number, T ∈ [0, N_STAGES]
  *     (integer part = stage, fraction = progress). Scrubbing, pausing,
  *     jumping and looping are therefore always consistent.
+ *   • Stages 01–02 (metallizing, slitting) live in film-line.js on their own
+ *     stations down the line; the winder and capacitor run on "line time"
+ *     L = lineT(T), see stages.js.
  *   • Only the camera damping and the pressure-test sparks use wall time.
  *
  * Usage
@@ -19,7 +22,9 @@ import {
   DIM, STACK, buildCan, buildRimBead, buildLidAssembly, buildLabel, labelGeometry, buildElement,
 } from '../three/capacitor-model.js';
 import { Emitter } from './particles.js';
-import { STAGES } from './stages.js';
+import { FilmStrip } from './film-strip.js';
+import { FilmLine } from './film-line.js';
+import { STAGES, lineT, LINE_START } from './stages.js';
 import { FactoryUI } from './factory-ui.js';
 
 const { clamp, lerp, smoothstep } = THREE.MathUtils;
@@ -33,75 +38,6 @@ const BASE_Y = -DIM.H / 2;                     // world y of the can base
 const W_Y = STACK.elements[1] + BASE_Y;        // world y of the winding axis
 const FLOOR_Y = BASE_Y - 0.04;
 const FEED = 9;                                // film fed per T-unit (scene units)
-
-/* ------------------------------------------------------------- film strip */
-
-/** A ribbon of film following a polyline in the YZ plane (width along X). */
-class FilmStrip extends THREE.Mesh {
-  constructor(width, material, samples = 60) {
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(samples * 6), 3));
-    geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(samples * 6), 3));
-    geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(samples * 4), 2));
-    const idx = [];
-    for (let i = 0; i < samples - 1; i++) {
-      const a = i * 2;
-      idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
-    }
-    geo.setIndex(idx);
-    super(geo, material);
-    this.width = width;
-    this.samples = samples;
-    this.frustumCulled = false;
-    this.castShadow = true;
-  }
-
-  /**
-   * @param {number[][]} pts [[z, y], ...]
-   * @param {object} o  x: centre, from/to: drawn fraction, flow: texture scroll, sOffset: arc offset
-   */
-  setPath(pts, { x = 0, from = 0, to = 1, flow = 0, sOffset = 0, flipU = false } = {}) {
-    const cum = [0];
-    for (let i = 1; i < pts.length; i++) {
-      cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-    }
-    const total = cum[cum.length - 1] || 1e-6;
-    const s0 = from * total, s1 = to * total;
-    const pos = this.geometry.attributes.position.array;
-    const nor = this.geometry.attributes.normal.array;
-    const uv = this.geometry.attributes.uv.array;
-    const hw = this.width / 2;
-    let j = 0;
-    for (let k = 0; k < this.samples; k++) {
-      const s = s0 + ((s1 - s0) * k) / (this.samples - 1);
-      while (j < cum.length - 2 && s > cum[j + 1]) j++;
-      const segLen = cum[j + 1] - cum[j] || 1e-6;
-      const f = clamp((s - cum[j]) / segLen, 0, 1);
-      const z = lerp(pts[j][0], pts[j + 1][0], f);
-      const y = lerp(pts[j][1], pts[j + 1][1], f);
-      const tz = (pts[j + 1][0] - pts[j][0]) / segLen;
-      const ty = (pts[j + 1][1] - pts[j][1]) / segLen;
-      const o = k * 6;
-      pos[o] = x - hw; pos[o + 1] = y; pos[o + 2] = z;
-      pos[o + 3] = x + hw; pos[o + 4] = y; pos[o + 5] = z;
-      nor[o] = 0; nor[o + 1] = -tz; nor[o + 2] = ty;
-      nor[o + 3] = 0; nor[o + 4] = -tz; nor[o + 5] = ty;
-      const v = (s + sOffset - flow) * 0.35;
-      uv[k * 4] = flipU ? 1 : 0; uv[k * 4 + 1] = v;
-      uv[k * 4 + 2] = flipU ? 0 : 1; uv[k * 4 + 3] = v;
-    }
-    this.geometry.attributes.position.needsUpdate = true;
-    this.geometry.attributes.normal.needsUpdate = true;
-    this.geometry.attributes.uv.needsUpdate = true;
-    return total;
-  }
-}
-
-const pathLength = (pts) => {
-  let l = 0;
-  for (let i = 1; i < pts.length; i++) l += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-  return l;
-};
 
 /** Chamfer the corners of a polyline so a centripetal Catmull-Rom rounds them. */
 function roundedCurve(points, r = 0.07) {
@@ -236,14 +172,14 @@ export class CapacitorFactory {
 
     /* lights */
     scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x0f263a, 0.55));
-    const key = new THREE.DirectionalLight(0xffffff, 2.4);
+    const key = (this.key = new THREE.DirectionalLight(0xffffff, 2.4));
     key.position.set(5, 9, 6);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
     Object.assign(key.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 30 });
     key.shadow.bias = -0.0005;
     key.shadow.normalBias = 0.02;
-    scene.add(key);
+    scene.add(key, key.target);
     const rim = new THREE.DirectionalLight(0x3d9bff, 2.2);
     rim.position.set(-6, 4, -6);
     scene.add(rim);
@@ -264,6 +200,7 @@ export class CapacitorFactory {
     this.#buildWinder();
     this.#buildGuns();
     this.#buildProduct();
+    this.filmLine = new FilmLine(scene, m);
   }
 
   #buildWinder() {
@@ -275,7 +212,7 @@ export class CapacitorFactory {
     const L = (this.layout = {
       rollA: [-3.9, 1.95], rollB: [-3.9, -1.4], rollR: 0.95,
       ga1: [-2.5, 1.0], ga2: [-1.2, 0.55], gb1: [-2.5, -0.55], gr: 0.12,
-      Wu: 1.5, Wd: DIM.elemL, off: 0.035,
+      Wd: DIM.elemL, off: 0.035,
     });
     const axisX = (geo) => geo.rotateZ(Math.PI / 2);
 
@@ -287,21 +224,22 @@ export class CapacitorFactory {
     stripe.position.set(1.02, FLOOR_Y + 5.36, -2.75);
     w.add(plate, stripe);
 
-    const mkRoll = ([z, y]) => {
+    // two reels from the slitter, margins on opposite edges (offset ±off)
+    const mkRoll = ([z, y], x) => {
       const g = new THREE.Group();
-      g.position.set(0, y, z);
-      const body = new THREE.Mesh(axisX(new THREE.CylinderGeometry(1, 1, L.Wu, 64)), [m.filmRoll, m.elementFace, m.elementFace]);
+      g.position.set(x, y, z);
+      const body = new THREE.Mesh(axisX(new THREE.CylinderGeometry(1, 1, L.Wd, 64)), [m.filmRoll, m.elementFace, m.elementFace]);
       body.castShadow = true;
-      const hub = new THREE.Mesh(axisX(new THREE.CylinderGeometry(0.26, 0.26, L.Wu + 0.1, 32)), m.yellowPaint);
+      const hub = new THREE.Mesh(axisX(new THREE.CylinderGeometry(0.26, 0.26, L.Wd + 0.1, 32)), m.yellowPaint);
       const shaft = new THREE.Mesh(axisX(new THREE.CylinderGeometry(0.07, 0.07, 2.0, 16)), m.steel);
-      shaft.position.x = 0.05;
+      shaft.position.x = 0.05 - x;
       g.add(body, hub, shaft);
       g.userData.body = body;
       w.add(g);
       return g;
     };
-    this.rollA = mkRoll(L.rollA);
-    this.rollB = mkRoll(L.rollB);
+    this.rollA = mkRoll(L.rollA, L.off);
+    this.rollB = mkRoll(L.rollB, -L.off);
 
     const rollerGeo = axisX(new THREE.CylinderGeometry(L.gr, L.gr, 1.75, 32));
     this.rollers = [L.ga1, L.ga2, L.gb1].map(([z, y]) => {
@@ -312,48 +250,17 @@ export class CapacitorFactory {
       return r;
     });
 
-    // slitting knives
-    const kA = [lerp(L.ga1[0], L.ga2[0], 0.5), lerp(L.ga1[1] + L.gr, L.ga2[1] + L.gr, 0.5)];
-    const kB = [lerp(L.gb1[0], L.ga2[0], 0.4), lerp(L.gb1[1] + L.gr, L.ga2[1] + L.gr, 0.4)];
-    this.knifePts = [kA, kB];
-    const bladeGeo = axisX(new THREE.CylinderGeometry(0.2, 0.2, 0.012, 48));
-    const hubGeo = axisX(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 16));
-    this.knives = [];
-    [kA, kB].forEach(([z, y], i) => {
-      [-1, 1].forEach((side) => {
-        const g = new THREE.Group();
-        const edgeX = side < 0 ? -L.Wd / 2 + (i ? -L.off : L.off) : L.Wd / 2 + (i ? -L.off : L.off);
-        g.position.set(edgeX, y, z);
-        const blade = new THREE.Mesh(bladeGeo, m.steel);
-        const hub = new THREE.Mesh(hubGeo, m.darkSteel);
-        g.add(blade, hub);
-        w.add(g);
-        this.knives.push(g);
-      });
-    });
-
-    // film webs (upstream = full width, downstream = slit width)
-    this.filmAUp = new FilmStrip(L.Wu, m.film);
+    // film webs: each reel's ribbon runs over its guide rollers to the mandrel
+    // (the "Up" strip ends at a via point so the tail cut can trim the "Down" strip alone)
+    this.viaPts = [
+      [lerp(L.ga1[0], L.ga2[0], 0.5), lerp(L.ga1[1] + L.gr, L.ga2[1] + L.gr, 0.5)],
+      [lerp(L.gb1[0], L.ga2[0], 0.4), lerp(L.gb1[1] + L.gr, L.ga2[1] + L.gr, 0.4)],
+    ];
+    this.filmAUp = new FilmStrip(L.Wd, m.film);
     this.filmADown = new FilmStrip(L.Wd, m.film);
-    this.filmBUp = new FilmStrip(L.Wu, m.film);
+    this.filmBUp = new FilmStrip(L.Wd, m.film);
     this.filmBDown = new FilmStrip(L.Wd, m.film);
-    // edge trims peeled away by the knives
-    const trimW = (L.Wu - L.Wd) / 2;
-    this.trims = [0, 1, 2, 3].map(() => new FilmStrip(trimW - 0.01, m.film, 16));
-    w.add(this.filmAUp, this.filmADown, this.filmBUp, this.filmBDown, ...this.trims);
-    const trimBobbinGeo = axisX(new THREE.CylinderGeometry(0.13, 0.13, 0.14, 24));
-    this.trimEnds = [
-      [kA[0] + 0.25, kA[1] + 1.1], [kA[0] + 0.25, kA[1] + 1.1],
-      [kB[0] + 0.2, kB[1] - 1.2], [kB[0] + 0.2, kB[1] - 1.2],
-    ];
-    this.trimXs = [
-      -L.Wu / 2 + trimW / 2, L.Wu / 2 - trimW / 2, -L.Wu / 2 + trimW / 2, L.Wu / 2 - trimW / 2,
-    ];
-    this.trimEnds.forEach(([z, y], i) => {
-      const b = new THREE.Mesh(trimBobbinGeo, m.yellowPaint);
-      b.position.set(this.trimXs[i], y, z);
-      w.add(b);
-    });
+    w.add(this.filmAUp, this.filmADown, this.filmBUp, this.filmBDown);
 
     // mandrel + spindle housing (drive side, +x; camera sits on the -x side)
     this.mandrel = new THREE.Group();
@@ -613,14 +520,29 @@ export class CapacitorFactory {
 
   /* ------------------------------------------------------------ update */
 
-  /** Set the whole scene to timeline position T (0…7). */
+  /** Set the whole scene to timeline position T (0…N_STAGES). */
   update(T) {
+    this.filmLine.update(T, T * this.opts.stageDuration);
+    this.#updateLine(lineT(T));
+    // the winder and capacitor only take the stage as the camera heads their way
+    const onLine = T >= LINE_START - 0.15;
+    this.winder.visible &&= onLine;
+    this.product.visible = onLine;
+    this.T = T;
+    this.#syncStage(T);
+  }
+
+  /**
+   * Winder → finished capacitor, as a function of line time L (0…7, see stages.js).
+   * The "stage N" comments below count in line time, i.e. timeline stage N + 1.
+   */
+  #updateLine(T) {
     const m = this.m;
     const L = this.layout;
     const tSec = T * this.opts.stageDuration;
     const P = this.pressure;
 
-    /* ---------- stage 1-2 : feed, slit, wind ---------- */
+    /* ---------- feed & wind ---------- */
     const r = T < 3 ? this.#elementR(T) : DIM.elemR;
     const fed = Math.min(T, 1.9) * FEED;
     const windP = seg(T, 1.02, 1.85);
@@ -637,24 +559,19 @@ export class CapacitorFactory {
       this.rollA.rotation.x = -fed / rollR;
       this.rollB.rotation.x = fed / rollR;
       this.rollers.forEach((ro) => { ro.rotation.x = fed / L.gr; });
-      this.knives.forEach((k, i) => { k.rotation.x = tSec * 6 + i; });
 
       const topY = W_Y + r + 0.004;
-      const [kA, kB] = this.knifePts;
+      const [kA, kB] = this.viaPts;
       const aUp = [[L.rollA[0], L.rollA[1] - rollR], [L.ga1[0], L.ga1[1] + L.gr], kA];
       const aDown = [kA, [L.ga2[0], L.ga2[1] + L.gr + 0.012], [0, topY + 0.008]];
       const bUp = [[L.rollB[0], L.rollB[1] + rollR], [L.gb1[0] + 0.08, L.gb1[1] + L.gr - 0.02], kB];
       const bDown = [kB, [L.ga2[0], L.ga2[1] + L.gr], [0, topY]];
       const cut = easeIn(seg(T, 1.86, 1.94));
-      const upA = this.filmAUp.setPath(aUp, { flow: fed });
+      const upA = this.filmAUp.setPath(aUp, { x: L.off, flow: fed });
       this.filmADown.setPath(aDown, { x: L.off, flow: fed, sOffset: upA, from: cut });
-      const upB = this.filmBUp.setPath(bUp, { flow: fed, flipU: true });
+      const upB = this.filmBUp.setPath(bUp, { x: -L.off, flow: fed, flipU: true });
       this.filmBDown.setPath(bDown, { x: -L.off, flow: fed, sOffset: upB, from: cut, flipU: true });
       this.filmADown.visible = this.filmBDown.visible = cut < 0.999;
-      this.trims.forEach((tr, i) => {
-        const k = i < 2 ? kA : kB;
-        tr.setPath([k, this.trimEnds[i]], { x: this.trimXs[i], flow: fed });
-      });
     }
 
     /* ---------- the wound element (middle of the stack) ---------- */
@@ -816,9 +733,6 @@ export class CapacitorFactory {
     const xrayTarget = Math.max(this.xrayManual ? 1 : 0, ease(seg(T, 6.0, 6.15)));
     this.xrayGoal = xrayTarget;
     this.#applyXray(this.xray);
-
-    this.T = T;
-    this.#syncStage(T);
   }
 
   #applyXray(x) {
@@ -873,6 +787,15 @@ export class CapacitorFactory {
     this.camera.position.copy(pos);
     this.controls.target.copy(tgt);
     this.controls.update();
+    this.#followLight();
+  }
+
+  /** Keep the shadow-casting key light (and its shadow frustum) over the current station. */
+  #followLight() {
+    const x = this.controls.target.x;
+    this.key.position.set(x + 5, 9, 6);
+    this.key.target.position.set(x, 0, 0);
+    this.key.target.updateMatrixWorld();
   }
 
   /* ------------------------------------------------------------ loop */
@@ -914,6 +837,7 @@ export class CapacitorFactory {
       this.controls.target.lerp(tgt, k);
     }
     this.controls.update();
+    this.#followLight();
     this.renderer.render(this.scene, this.camera);
     this.ui.frame(T, this);
   }

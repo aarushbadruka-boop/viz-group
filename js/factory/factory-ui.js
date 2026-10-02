@@ -131,6 +131,7 @@ export class FactoryUI {
     }
     this.rail.append(this.fill, this.handle);
     this.steps = el('ol', 'vf-steps');
+    this.steps.style.setProperty('--vf-n', String(n)); // the step grid scales with the stage count
     this.stepBtns = S.map((s, i) => {
       const li = el('li');
       const b = el('button', 'vf-steps__btn', `<span class="vf-steps__n">${pad(i + 1)}</span><span class="vf-steps__t">${s.short}</span>`);
