@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0F263A"/>
-  <g transform="translate(6 18) scale(0.27) matrix(1 0 -0.22 1 18 0)" fill="#2E9BFF">
-    <path d="M0 8h20l16 44 16-44h20L46 72H26z"/>
-    <path d="M80 8h18v64H80z"/>
-    <path d="M106 8h64v14l-32 30h32v20h-64V58l32-30h-32z"/>
+  <rect width="64" height="64" rx="14" fill="#FFFFFF"/>
+  <g transform="translate(32 32) scale(0.27) translate(-100 -100)">
+    <g fill="#0265BA">
+      <polygon points="90,21 72,194 55,194 36,99 52,77 63,148 75,41"/>
+      <polygon points="96,64 101,58 110,68 110,194 96,194"/>
+      <polygon points="119,36 128,45 164,97 164,115 136,164 164,174 164,194 117,194 117,157 144,97 119,68"/>
+    </g>
+    <polygon fill="#E71E24" points="99,6 110,21 110,51 100,41 96,41 96,17"/>
   </g>
-  <rect x="12" y="46" width="40" height="3" rx="1.5" fill="#FFD204"/>
 </svg>

@@ -183,13 +183,11 @@ address { font-style: normal; }
 .header__inner { display: flex; align-items: center; gap: 28px; height: var(--header-h); }
 
 .brand { display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; }
-.brand__mark { width: 78px; height: auto; }
+.brand__mark { height: 52px; width: auto; }
 .brand__word {
   font-family: var(--f-sans); font-weight: 700; font-size: 12.5px; letter-spacing: 0.34em; text-transform: uppercase;
   padding-left: 12px; border-left: 1px solid rgba(255, 255, 255, 0.25); line-height: 1.1;
 }
-.brand__wave { stroke-dasharray: 90; stroke-dashoffset: 90; animation: wave-in 1.4s 0.3s var(--ease) forwards; }
-@keyframes wave-in { to { stroke-dashoffset: 0; } }
 
 .nav { margin-left: auto; }
 .nav__list { display: flex; align-items: center; gap: 4px; }
@@ -752,7 +750,7 @@ address { font-style: normal; }
 }
 @media (max-width: 760px) {
   .utility__links li:last-child { display: none; }
-  .brand__mark { width: 64px; }
+  .brand__mark { height: 40px; }
   .hero__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat:nth-child(3) { padding-left: 0; border-left: 0; }
   .stat:nth-child(n + 3) { margin-top: 12px; border-top: 1px solid var(--line-dark); }
