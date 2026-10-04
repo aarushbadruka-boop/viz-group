@@ -80,14 +80,14 @@
 /* ------------------------------------------------------------------ toolbar */
 .vf-tools { position: absolute; right: 20px; top: 20px; z-index: 3; display: flex; flex-direction: column; gap: 8px; }
 .vf-tool {
-  display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; color: #fff; cursor: pointer;
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: #fff; cursor: pointer;
   transition: background-color 0.25s, color 0.25s, transform 0.35s var(--vf-ease), border-color 0.25s;
 }
 .vf-tool svg { width: 20px; height: 20px; }
 .vf-tool:hover { transform: translateX(-2px); border-color: rgba(255, 255, 255, 0.35); }
 .vf-tool[aria-pressed='true'] { background: var(--vf-yellow); color: var(--vf-navy); border-color: var(--vf-yellow); }
 .vf-tool.is-attn { border-color: var(--vf-yellow); color: var(--vf-yellow); }
-.vf-tool:focus-visible { outline: 2px solid var(--vf-yellow); outline-offset: 2px; }
+.vf-tool:focus-visible { outline: 3px solid var(--vf-yellow); outline-offset: 2px; }
 
 /* ------------------------------------------------------------------ pressure test */
 .vf-pressure {
@@ -119,7 +119,7 @@
 .vf-pressure input[type='range']::-moz-range-thumb {
   width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 4px solid var(--vf-navy); box-shadow: 0 0 0 2px var(--vf-yellow);
 }
-.vf-pressure input[type='range']:focus-visible { outline: 2px solid var(--vf-yellow); outline-offset: 2px; border-radius: 6px; }
+.vf-pressure input[type='range']:focus-visible { outline: 3px solid var(--vf-yellow); outline-offset: 2px; border-radius: 6px; }
 .vf-pressure__status { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.85); }
 .vf-pressure__status[data-state='warn'] .vf-dot { background: var(--vf-yellow); animation-duration: 0.9s; }
 .vf-pressure__status[data-state='isolated'] { color: #ff8a80; }
@@ -155,10 +155,10 @@
 .vf-play { width: 50px; height: 50px; background: var(--vf-yellow); color: var(--vf-navy); box-shadow: 0 10px 30px -10px rgba(255, 210, 4, 0.7); }
 .vf-play svg { width: 22px; height: 22px; }
 .vf-play:hover { transform: scale(1.06); }
-.vf-step-btn { width: 36px; height: 36px; border: 1px solid var(--vf-line); background: rgba(255, 255, 255, 0.04); }
+.vf-step-btn { width: 44px; height: 44px; border: 1px solid var(--vf-line); background: rgba(255, 255, 255, 0.04); }
 .vf-step-btn svg { width: 18px; height: 18px; }
 .vf-step-btn:hover { background: rgba(255, 255, 255, 0.1); }
-.vf-play:focus-visible, .vf-step-btn:focus-visible { outline: 2px solid var(--vf-yellow); outline-offset: 3px; }
+.vf-play:focus-visible, .vf-step-btn:focus-visible { outline: 3px solid var(--vf-yellow); outline-offset: 3px; }
 
 .vf-track { min-width: 0; }
 .vf-rail {
@@ -178,10 +178,11 @@
   transition: transform 0.25s var(--vf-ease);
 }
 .vf-rail:hover .vf-rail__handle, .vf.is-scrubbing .vf-rail__handle { transform: scale(1.25); }
-.vf-rail:focus-visible { outline: 2px solid var(--vf-yellow); outline-offset: 4px; border-radius: 8px; }
+.vf-rail:focus-visible { outline: 3px solid var(--vf-yellow); outline-offset: 4px; border-radius: 8px; }
 
 .vf-steps { display: grid; grid-template-columns: repeat(var(--vf-n, 7), minmax(0, 1fr)); margin: 8px 0 0; padding: 0; list-style: none; }
 .vf-steps__btn {
+  min-height: 44px;
   display: flex; align-items: baseline; gap: 6px; width: 100%; padding: 6px 6px 4px 0; text-align: left; cursor: pointer;
   color: rgba(255, 255, 255, 0.48); background: none; border: 0; border-radius: 8px;
   transition: color 0.25s;
@@ -192,7 +193,7 @@
 .vf-steps__btn.is-done { color: rgba(125, 190, 255, 0.85); }
 .vf-steps__btn.is-active { color: #fff; }
 .vf-steps__btn.is-active .vf-steps__n { color: var(--vf-yellow); }
-.vf-steps__btn:focus-visible { outline: 2px solid var(--vf-yellow); outline-offset: 2px; }
+.vf-steps__btn:focus-visible { outline: 3px solid var(--vf-yellow); outline-offset: 2px; }
 .vf-time { font-family: var(--f-num, 'Bebas Neue', sans-serif); font-size: 1.3rem; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.7); font-variant-numeric: tabular-nums; }
 
 /* ------------------------------------------------------------------ fullscreen */
@@ -220,7 +221,7 @@
   .vf-hud__body { -webkit-line-clamp: unset; display: block; }
   .vf-hud__num { font-size: 2.6rem; }
   .vf-tools { top: 12px; right: 12px; gap: 6px; }
-  .vf-tool { width: 38px; height: 38px; border-radius: 11px; }
+  .vf-tool { width: 44px; height: 44px; border-radius: 12px; }
   .vf-pressure { position: relative; right: auto; bottom: auto; width: auto; order: 3; margin: 0 16px 16px; }
   .vf-hint { bottom: auto; top: 364px; }
   .vf-timeline { grid-template-columns: 1fr auto; gap: 12px 16px; padding: 14px 16px; }
@@ -230,4 +231,10 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .vf-hud.is-in > * { animation: none; }
+}
+
+/* phones: the rail itself is the scrub target — make it thumb-sized */
+@media (pointer: coarse) {
+  .vf-rail { height: 44px; }
+  .vf-rail__handle { width: 26px; height: 26px; margin: -13px 0 0 -13px; }
 }

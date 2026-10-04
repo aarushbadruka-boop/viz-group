@@ -6,7 +6,19 @@
   <title>VIZ Technologies — Metallized Polypropylene Film Capacitors</title>
   <meta name="description" content="VIZ Technologies Private Limited is an ISO 9001:2015 certified manufacturer of metallized polypropylene film capacitors in Hyderabad, India — power capacitors, power electronic capacitors, APFC components and AC motor run capacitors." />
   <meta name="theme-color" content="#0F263A" />
-  <script>document.documentElement.classList.add('js');</script>
+  <script>
+    /* apply saved reader preferences before first paint */
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try {
+        var t = localStorage.getItem('viz-theme'), l = localStorage.getItem('viz-lang');
+        if (t === 'dark' || t === 'light') d.dataset.theme = t;
+        if (localStorage.getItem('viz-font') === 'dyslexic') d.dataset.font = 'dyslexic';
+        if (l === 'de' || l === 'hi') d.lang = l;
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" href="assets/brand/favicon.svg?v=2" type="image/svg+xml" />
   <link rel="icon" href="assets/brand/favicon-32.png?v=2" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=2" />
@@ -19,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Raleway:wght@400;500;700;800;900&family=Roboto:wght@500&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,400i,700&display=swap" />
-  <link rel="stylesheet" href="css/main.css?v=3" />
-  <link rel="stylesheet" href="css/factory.css?v=3" />
+  <link rel="stylesheet" href="css/main.css?v=4" />
+  <link rel="stylesheet" href="css/factory.css?v=4" />
 
   <script type="importmap">
     {
@@ -53,7 +65,7 @@
 </head>
 
 <body id="top">
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">Skip to main content</a>
 
   <!-- ============================================================ UTILITY BAR -->
   <div class="utility">
@@ -143,6 +155,36 @@
         </ul>
       </nav>
 
+      <div class="prefs" data-prefs>
+        <button class="prefs__btn" type="button" aria-expanded="false" aria-controls="prefs-panel" aria-haspopup="dialog" data-prefs-btn>
+          <span class="prefs__aa" aria-hidden="true" data-i18n-skip>Aa</span>
+          <span class="sr-only">Language &amp; accessibility</span>
+        </button>
+        <div class="prefs__panel" id="prefs-panel" role="dialog" aria-labelledby="prefs-title" hidden data-prefs-panel>
+          <p class="prefs__title" id="prefs-title">Language &amp; accessibility</p>
+          <fieldset class="prefs__group">
+            <legend class="prefs__legend">Language</legend>
+            <label class="prefs__opt" data-i18n-skip><input type="radio" name="viz-lang" value="en" checked /><span class="prefs__name" lang="en">English</span><span class="prefs__code" aria-hidden="true">EN</span></label>
+            <label class="prefs__opt" data-i18n-skip><input type="radio" name="viz-lang" value="de" /><span class="prefs__name" lang="de">Deutsch</span><span class="prefs__code" aria-hidden="true">DE</span></label>
+            <label class="prefs__opt" data-i18n-skip><input type="radio" name="viz-lang" value="hi" /><span class="prefs__name" lang="hi">हिन्दी</span><span class="prefs__code" aria-hidden="true">HI</span></label>
+          </fieldset>
+          <fieldset class="prefs__group">
+            <legend class="prefs__legend">Reading</legend>
+            <button class="prefs__switch" type="button" role="switch" aria-checked="false" aria-describedby="prefs-font-d" data-prefs-font>
+              <span class="prefs__switch-text">
+                <span class="prefs__switch-t">Dyslexia-friendly font</span>
+                <span class="prefs__switch-d" id="prefs-font-d">OpenDyslexic: heavier letter bottoms make letters easier to tell apart.</span>
+              </span>
+              <span class="prefs__track" aria-hidden="true"><span class="prefs__thumb"></span></span>
+            </button>
+          </fieldset>
+          <p class="prefs__note">Your choices are saved on this device.</p>
+        </div>
+      </div>
+      <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode" data-theme-toggle>
+        <svg class="theme-toggle__moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+        <svg class="theme-toggle__sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+      </button>
       <a class="btn btn--yellow btn--sm header__cta" href="#contact">Request a quote</a>
       <button class="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu" data-burger>
         <span></span><span></span>
@@ -168,7 +210,7 @@
     <p class="mobile-menu__foot">sales@viztechnologies.biz · +91-40-23097015</p>
   </div>
 
-  <main id="main">
+  <main id="main" tabindex="-1">
     <!-- ============================================================ HERO -->
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero__bg" aria-hidden="true">
@@ -255,6 +297,11 @@
       <div class="container clients__head">
         <h2 class="clients__title" id="clients-title">Trusted by leaders in power, energy &amp; appliances</h2>
         <p class="clients__note">Clients &amp; strategic partners</p>
+        <button class="marquee-toggle" type="button" aria-pressed="false" data-marquee-toggle>
+          <svg class="marquee-toggle__pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5h3v13H8zM13 5.5h3v13h-3z" fill="currentColor" /></svg>
+          <svg class="marquee-toggle__play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z" fill="currentColor" /></svg>
+          <span class="sr-only">Pause scrolling logos</span>
+        </button>
       </div>
       <div class="marquee" data-marquee>
         <ul class="marquee__track">
@@ -881,6 +928,7 @@
     </div>
   </footer>
 
+  <script type="module" src="js/prefs.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
