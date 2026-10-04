@@ -6,15 +6,27 @@
   <title>How a VIZ Capacitor Is Made — Interactive 3D</title>
   <meta name="description" content="An interactive 3D walkthrough of how VIZ Technologies manufactures a metallized polypropylene (MPP) power capacitor — from film slitting to the overpressure disconnector." />
   <meta name="theme-color" content="#0F263A" />
-  <script>document.documentElement.classList.add('js');</script>
+  <script>
+    /* apply saved reader preferences before first paint */
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try {
+        var t = localStorage.getItem('viz-theme'), l = localStorage.getItem('viz-lang');
+        if (t === 'dark' || t === 'light') d.dataset.theme = t;
+        if (localStorage.getItem('viz-font') === 'dyslexic') d.dataset.font = 'dyslexic';
+        if (l === 'de' || l === 'hi') d.lang = l;
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" href="assets/brand/favicon.svg?v=2" type="image/svg+xml" />
   <link rel="icon" href="assets/brand/favicon-32.png?v=2" type="image/png" sizes="32x32" />
   <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Raleway:wght@400;500;700;800;900&family=Roboto:wght@500&display=swap" />
-  <link rel="stylesheet" href="css/main.css?v=3" />
-  <link rel="stylesheet" href="css/factory.css?v=3" />
+  <link rel="stylesheet" href="css/main.css?v=4" />
+  <link rel="stylesheet" href="css/factory.css?v=4" />
   <script type="importmap">
     { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons": "./vendor/three/addons.min.js" } }
   </script>
@@ -23,6 +35,7 @@
     .immersive { min-height: 100svh; display: flex; flex-direction: column; padding: 16px; gap: 16px; }
     .immersive__bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 8px; }
     .immersive__title { font-weight: 800; font-size: clamp(1rem, 2vw, 1.25rem); }
+    .immersive__tools { display: flex; align-items: center; gap: 10px; }
     .immersive__title span { color: var(--on-dark-55); font-weight: 500; }
     .immersive .vf { flex: 1; display: flex; flex-direction: column; }
     .immersive .vf-viewport { flex: 1; height: auto; min-height: 480px; }
@@ -30,7 +43,8 @@
   </style>
 </head>
 <body>
-  <main class="immersive">
+  <a class="skip-link" href="#factory">Skip to the 3D animation</a>
+  <main class="immersive" id="main">
     <div class="immersive__bar">
       <a class="brand" href="index.html" aria-label="VIZ Technologies — home">
         <svg class="brand__mark" viewBox="32 2 136 196" width="36" height="52" aria-hidden="true">
@@ -43,10 +57,39 @@
         </svg>
       </a>
       <h1 class="immersive__title">From film to finished capacitor <span>· interactive 3D</span></h1>
-      <a class="btn btn--ghost btn--sm" href="index.html#products">Products</a>
+      <div class="immersive__tools">
+        <div class="prefs" data-prefs>
+            <button class="prefs__btn" type="button" aria-expanded="false" aria-controls="prefs-panel" aria-haspopup="dialog" data-prefs-btn>
+              <span class="prefs__aa" aria-hidden="true" data-i18n-skip>Aa</span>
+              <span class="sr-only">Language &amp; accessibility</span>
+            </button>
+            <div class="prefs__panel" id="prefs-panel" role="dialog" aria-labelledby="prefs-title" hidden data-prefs-panel>
+              <p class="prefs__title" id="prefs-title">Language &amp; accessibility</p>
+              <fieldset class="prefs__group">
+                  <legend class="prefs__legend">Language</legend>
+                  <label class="prefs__opt" data-i18n-skip><input type="radio" name="viz-lang" value="en" checked /><span class="prefs__name" lang="en">English</span><span class="prefs__code" aria-hidden="true">EN</span></label>
+                  <label class="prefs__opt" data-i18n-skip><input type="radio" name="viz-lang" value="de" /><span class="prefs__name" lang="de">Deutsch</span><span class="prefs__code" aria-hidden="true">DE</span></label>
+                  <label class="prefs__opt" data-i18n-skip><input type="radio" name="viz-lang" value="hi" /><span class="prefs__name" lang="hi">हिन्दी</span><span class="prefs__code" aria-hidden="true">HI</span></label>
+              </fieldset>
+              <fieldset class="prefs__group">
+                  <legend class="prefs__legend">Reading</legend>
+                  <button class="prefs__switch" type="button" role="switch" aria-checked="false" aria-describedby="prefs-font-d" data-prefs-font>
+                    <span class="prefs__switch-text">
+                      <span class="prefs__switch-t">Dyslexia-friendly font</span>
+                      <span class="prefs__switch-d" id="prefs-font-d">OpenDyslexic: heavier letter bottoms make letters easier to tell apart.</span>
+                    </span>
+                    <span class="prefs__track" aria-hidden="true"><span class="prefs__thumb"></span></span>
+                  </button>
+              </fieldset>
+              <p class="prefs__note">Your choices are saved on this device.</p>
+            </div>
+          </div>
+        <a class="btn btn--ghost btn--sm" href="index.html#products">Products</a>
+      </div>
     </div>
     <div id="factory" tabindex="-1"></div>
   </main>
+  <script type="module" src="js/prefs.js"></script>
   <script type="module">
     import { CapacitorFactory } from './js/factory/capacitor-factory.js';
     const el = document.getElementById('factory');

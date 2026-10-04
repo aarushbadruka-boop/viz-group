@@ -16,6 +16,9 @@ const ICONS = {
 };
 
 const pad = (n) => String(n).padStart(2, '0');
+// localisation hook (js/i18n.js); English passes straight through when it is absent
+const t = (s) => window.vizI18n?.t(s) ?? s;
+const fmt = (s, vars) => t(s).replace(/\{(\w+)\}/g, (_, k) => vars[k]);
 const el = (tag, cls, html) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -49,9 +52,9 @@ export class FactoryUI {
     this.hud.innerHTML = `
       <div class="vf-hud__index"><span class="vf-hud__num">01</span><span class="vf-hud__of">/ ${pad(n)}</span></div>
       <p class="vf-hud__kicker">Manufacturing stage</p>
-      <h3 class="vf-hud__title" aria-live="polite"></h3>
-      <p class="vf-hud__body"></p>
-      <dl class="vf-telemetry"></dl>
+      <h3 class="vf-hud__title" aria-live="polite" data-i18n-skip></h3>
+      <p class="vf-hud__body" data-i18n-skip></p>
+      <dl class="vf-telemetry" data-i18n-skip></dl>
       <p class="vf-hud__sim"><span class="vf-dot"></span>Simulated telemetry</p>`;
     this.hudNum = this.hud.querySelector('.vf-hud__num');
     this.hudTitle = this.hud.querySelector('.vf-hud__title');
@@ -91,13 +94,14 @@ export class FactoryUI {
         <output>0%</output>
       </div>
       <input type="range" min="0" max="100" step="1" value="0" />
-      <p class="vf-pressure__status" data-state="ok"><span class="vf-dot"></span><span>Circuit connected</span></p>`;
+      <p class="vf-pressure__status" data-state="ok" data-i18n-skip><span class="vf-dot"></span><span>Circuit connected</span></p>`;
     this.pInput = this.pressure.querySelector('input');
     this.pInput.id = this.pressure.querySelector('label').htmlFor;
     this.pOut = this.pressure.querySelector('output');
     this.pStatus = this.pressure.querySelector('.vf-pressure__status');
 
-    this.hint = el('p', 'vf-hint', coarse ? 'Tap ⟲ to rotate the model' : 'Drag to orbit · use +/− to zoom');
+    this.hint = el('p', 'vf-hint');
+    this.hint.setAttribute('data-i18n-skip', '');
     this.loading = el('div', 'vf-loading', '<span class="vf-spinner"></span><span>Initialising 3D line…</span>');
 
     this.viewport.append(this.canvas, this.hud, this.tools, this.pressure, this.hint, this.loading);
@@ -137,17 +141,39 @@ export class FactoryUI {
       const b = el('button', 'vf-steps__btn', `<span class="vf-steps__n">${pad(i + 1)}</span><span class="vf-steps__t">${s.short}</span>`);
       b.type = 'button';
       b.dataset.stage = i;
-      b.setAttribute('aria-label', `Stage ${i + 1}: ${s.title}`);
+      b.dataset.i18nSkip = '';
       li.append(b);
       this.steps.append(li);
       return b;
     });
     this.track.append(this.rail, this.steps);
     this.time = el('div', 'vf-time', '00:00');
+    this.time.setAttribute('aria-hidden', 'true');
     this.timeline.append(controls, this.track, this.time);
 
     this.root.append(this.viewport, this.timeline);
     this.setPlaying(this.f.playing);
+    this.relabel();
+    document.addEventListener('viz:langchange', () => this.relabel());
+  }
+
+  /** (Re)apply every visible / announced string in the current language. */
+  relabel() {
+    this.stepBtns.forEach((b, i) => {
+      b.setAttribute('aria-label', fmt('Stage {n}: {title}', { n: i + 1, title: t(this.stages[i].title) }));
+      b.querySelector('.vf-steps__t').textContent = t(this.stages[i].short);
+    });
+    this.#hintText();
+    this.setPlaying(this.f.playing);
+    if (this.pInput) this.setPressure(this.pInput.value / 100);
+    if (this.current != null) this.setStage(this.current, null, { quiet: true });
+    window.vizI18n?.apply(this.root);
+  }
+
+  #hintText() {
+    const on = this.btn.rotate.getAttribute('aria-pressed') === 'true';
+    this.hint.textContent = t(on ? 'Drag to orbit · pinch or +/− to zoom' : 'Swipe sideways to scrub · tap ⟲ to rotate');
+    if (!this.coarse) this.hint.textContent = t('Drag to orbit · use +/− to zoom');
   }
 
   #uid() { return Math.random().toString(36).slice(2, 8); }
@@ -177,7 +203,7 @@ export class FactoryUI {
       const on = this.btn.rotate.getAttribute('aria-pressed') !== 'true';
       this.btn.rotate.setAttribute('aria-pressed', String(on));
       f.setRotateEnabled(on);
-      this.hint.textContent = on ? 'Drag to orbit · use +/− to zoom' : 'Tap ⟲ to rotate the model';
+      this.#hintText();
     });
     this.btn.plus.addEventListener('click', () => f.zoom(0.8));
     this.btn.minus.addEventListener('click', () => f.zoom(1.25));
@@ -236,16 +262,20 @@ export class FactoryUI {
   fail() {
     this.loading.innerHTML = '<span>3D preview needs WebGL. Try a current version of Chrome, Edge, Safari or Firefox.</span>';
     this.root.classList.add('is-failed');
+    window.vizI18n?.apply(this.loading);
   }
 
-  setStage(i, prev) {
+  setStage(i, prev, { quiet = false } = {}) {
     const s = this.stages[i];
-    this.hud.classList.remove('is-in');
-    void this.hud.offsetWidth; // restart the entrance animation
-    this.hud.classList.add('is-in');
+    this.current = i;
+    if (!quiet) {
+      this.hud.classList.remove('is-in');
+      void this.hud.offsetWidth; // restart the entrance animation
+      this.hud.classList.add('is-in');
+    }
     this.hudNum.textContent = pad(i + 1);
-    this.hudTitle.textContent = s.title;
-    this.hudBody.textContent = s.body;
+    this.hudTitle.textContent = t(s.title);
+    this.hudBody.textContent = t(s.body);
     this.stepBtns.forEach((b, k) => {
       b.classList.toggle('is-active', k === i);
       b.classList.toggle('is-done', k < i);
@@ -258,7 +288,7 @@ export class FactoryUI {
 
   setPlaying(on) {
     this.playBtn.innerHTML = on ? ICONS.pause : ICONS.play;
-    this.playBtn.setAttribute('aria-label', on ? 'Pause animation' : 'Play animation');
+    this.playBtn.setAttribute('aria-label', t(on ? 'Pause animation' : 'Play animation'));
     this.root.classList.toggle('is-playing', on);
   }
 
@@ -271,9 +301,9 @@ export class FactoryUI {
     this.pInput.style.setProperty('--p', `${pct}%`);
     const isolated = p >= 0.72;
     this.pStatus.dataset.state = isolated ? 'isolated' : p > 0.12 ? 'warn' : 'ok';
-    this.pStatus.lastElementChild.textContent = isolated
+    this.pStatus.lastElementChild.textContent = t(isolated
       ? 'Leads torn — capacitor isolated'
-      : p > 0.12 ? 'Lid expanding…' : 'Circuit connected';
+      : p > 0.12 ? 'Lid expanding…' : 'Circuit connected');
   }
 
   frame(T, f) {
@@ -283,13 +313,13 @@ export class FactoryUI {
     this.handle.style.left = `${x}%`;
     if (this.frameCount++ % 4) return;
     this.rail.setAttribute('aria-valuenow', String(Math.round(x)));
-    this.rail.setAttribute('aria-valuetext', `Stage ${Math.min(n, Math.floor(T) + 1)} of ${n}`);
+    this.rail.setAttribute('aria-valuetext', fmt('Stage {n} of {total}', { n: Math.min(n, Math.floor(T) + 1), total: n }));
     const secs = Math.round(T * f.opts.stageDuration);
     this.time.textContent = `${pad(Math.floor(secs / 60))}:${pad(secs % 60)}`;
     const s = this.stages[Math.min(n - 1, Math.floor(T))];
     const rows = s.telemetry(T, f);
     this.teleRows.forEach((r, i) => {
-      const [k, v] = rows[i] || ['', ''];
+      const [k, v] = (rows[i] || ['', '']).map((x) => t(String(x)));
       if (r.dt.textContent !== k) r.dt.textContent = k;
       if (r.dd.textContent !== v) r.dd.textContent = v;
     });

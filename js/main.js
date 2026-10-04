@@ -2,6 +2,8 @@
  * VIZ Technologies — page behaviour.
  * Progressive enhancement: every section works without this file.
  */
+import { t } from './i18n.js';
+
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -37,16 +39,33 @@ if (mega) {
 const burger = $('[data-burger]');
 const mobileMenu = $('[data-mobile-menu]');
 if (burger && mobileMenu) {
-  const setMenu = (open) => {
+  const isOpen = () => burger.getAttribute('aria-expanded') === 'true';
+  const label = () => burger.setAttribute('aria-label', t(isOpen() ? 'Close menu' : 'Open menu'));
+  const setMenu = (open, { restoreFocus = false } = {}) => {
     burger.setAttribute('aria-expanded', String(open));
-    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    label();
+    // open directly under the header, whose position depends on the utility bar above it
+    if (open) mobileMenu.style.top = `${Math.max(0, header.getBoundingClientRect().bottom)}px`;
     mobileMenu.hidden = !open;
     document.body.style.overflow = open ? 'hidden' : '';
+    if (open) $('a', mobileMenu)?.focus();
+    else if (restoreFocus) burger.focus();
   };
-  burger.addEventListener('click', () => setMenu(burger.getAttribute('aria-expanded') !== 'true'));
+  burger.addEventListener('click', () => setMenu(!isOpen()));
   $$('a', mobileMenu).forEach((a) => a.addEventListener('click', () => setMenu(false)));
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
-  window.matchMedia('(min-width: 1021px)').addEventListener('change', (e) => { if (e.matches) setMenu(false); });
+  document.addEventListener('keydown', (e) => {
+    if (!isOpen()) return;
+    if (e.key === 'Escape') { setMenu(false, { restoreFocus: true }); return; }
+    if (e.key !== 'Tab') return;
+    // keep keyboard focus inside the open menu (burger → links → CTA → burger)
+    const ring = [burger, ...$$('a, button', mobileMenu)];
+    const i = ring.indexOf(document.activeElement);
+    if (e.shiftKey && i <= 0) { ring[ring.length - 1].focus(); e.preventDefault(); }
+    else if (!e.shiftKey && i === ring.length - 1) { ring[0].focus(); e.preventDefault(); }
+  });
+  document.addEventListener('viz:langchange', label);
+  // close the overlay when the desktop nav comes back (it stays hidden with the dyslexia font)
+  window.matchMedia('(min-width: 1181px)').addEventListener('change', (e) => { if (e.matches && getComputedStyle($('.nav')).display !== 'none') setMenu(false); });
 }
 
 /* ------------------------------------------------------------ marquee */
@@ -57,6 +76,21 @@ $$('[data-marquee] .marquee__track').forEach((track) => {
     track.append(clone);
   });
 });
+// moving content needs a pause control (WCAG 2.2.2)
+const marqueeBtn = $('[data-marquee-toggle]');
+if (marqueeBtn) {
+  const marquee = $('[data-marquee]');
+  const text = $('.sr-only', marqueeBtn);
+  const sync = () => {
+    const paused = marquee.classList.contains('is-paused');
+    marqueeBtn.setAttribute('aria-pressed', String(paused));
+    text.textContent = t(paused ? 'Play scrolling logos' : 'Pause scrolling logos');
+  };
+  marqueeBtn.addEventListener('click', () => { marquee.classList.toggle('is-paused'); sync(); });
+  text.setAttribute('data-i18n-skip', '');
+  document.addEventListener('viz:langchange', sync);
+  sync();
+}
 
 /* ------------------------------------------------------------ reveal + counters */
 const formatCount = (el, v) => {
@@ -157,6 +191,11 @@ $$('a[href="#process"][data-stage]').forEach((a) => {
 const form = $('[data-contact-form]');
 if (form) {
   const status = $('[data-form-status]', form);
+  // messages are kept as English keys so they re-translate when the language changes
+  let msg = status.textContent.trim();
+  const say = (m) => { msg = m; status.textContent = t(m); };
+  status.setAttribute('data-i18n-skip', '');
+  document.addEventListener('viz:langchange', () => say(msg));
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
@@ -165,7 +204,7 @@ if (form) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email || '')) invalid.push(form.elements.email);
     [form.elements.name, form.elements.email].forEach((el) => el.setAttribute('aria-invalid', String(invalid.includes(el))));
     if (invalid.length) {
-      status.textContent = 'Please add your name and a valid email address.';
+      say('Please add your name and a valid email address.');
       status.classList.add('is-error');
       invalid[0].focus();
       return;
@@ -179,7 +218,7 @@ if (form) {
     const body = lines.join('\n');
     const subject = `Enquiry — ${data.interest}${data.company ? ` — ${data.company}` : ''}`;
     window.location.href = `mailto:sales@viztechnologies.biz?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    status.textContent = 'Your email app should open with the enquiry ready to send.';
+    say('Your email app should open with the enquiry ready to send.');
   });
 }
 

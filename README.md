@@ -42,6 +42,25 @@ js/factory/factory-ui.js HUD / timeline DOM layer
 assets/                 product photos (img/products), hero photo (background removed), OG image, brand SVGs
 ```
 
+## Language, accessibility & theme
+
+- **"Aa" menu** (header, both pages): English · Deutsch · हिन्दी plus a dyslexia-friendly font toggle
+  (OpenDyslexic, self-hosted in `assets/fonts/opendyslexic/`, SIL OFL; only downloaded when switched on).
+  Choices persist in `localStorage`, and an inline `<head>` script applies them before first paint.
+- **Translations:** `js/i18n.js` swaps text nodes and `aria-label` / `placeholder` / `title` / `alt` using the
+  dictionaries `js/i18n/de.js` and `js/i18n/hi.js` (keyed by the English text). To add or change copy, edit the
+  English in the HTML and add the same string as a key in both dictionaries; untranslated strings simply stay in
+  English. Mark live or language-neutral elements `data-i18n-skip`. Scripts translate their own strings with `t()`.
+  The German and Hindi were machine-assisted: have native speakers review them before launch.
+- **Dark mode** follows `prefers-color-scheme`; the moon/sun toggle overrides it (choosing the system's own
+  theme again clears the override). Colours come from semantic tokens (`--surface`, `--ink`, `--heading`, …) in
+  `css/main.css`.
+- **Keyboard:** "Skip to main content" link, 3px focus rings (brand blue on light surfaces, yellow on dark),
+  Escape closes menus, focus is kept inside the open mobile menu, and the logo ticker has a pause button.
+- **First visit:** a spotlight and trilingual tip point at the Aa menu once (dismiss with Got it, Escape or a click).
+- **Touch:** on phones the 3D canvas scrubs the timeline with a sideways swipe and zooms with a pinch; ⟲ switches
+  to orbit mode. All controls are at least 44 × 44 px.
+
 ## 3D manufacturing component
 
 ```js

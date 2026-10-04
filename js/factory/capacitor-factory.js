@@ -96,14 +96,20 @@ export class CapacitorFactory {
 
   #initRenderer() {
     const canvas = this.ui.canvas;
+    // phones: cap resolution, skip MSAA on dense screens and use smaller shadow maps
+    this.mobile = window.matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 768;
+    const dpr = window.devicePixelRatio || 1;
+    this.maxDpr = this.mobile ? 1.5 : 1.75;
     try {
-      this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+      this.renderer = new THREE.WebGLRenderer({
+        canvas, antialias: !this.mobile || dpr < 2, alpha: true, powerPreference: 'high-performance',
+      });
     } catch (e) {
       this.ui.fail();
       return false;
     }
     const r = this.renderer;
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    r.setPixelRatio(Math.min(dpr, this.maxDpr));
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.05;
     r.shadowMap.enabled = true;
@@ -132,7 +138,43 @@ export class CapacitorFactory {
     this.lastTime = performance.now();
     this.#resize();
     new ResizeObserver(() => this.#resize()).observe(this.ui.canvas);
+    this.#bindTouch(canvas);
     return true;
+  }
+
+  /**
+   * Touch gestures while orbit-rotate is off (the default on phones, so the page still scrolls):
+   *   one-finger horizontal swipe → scrub the timeline (vertical swipes scroll the page)
+   *   two-finger pinch            → zoom the camera
+   * With rotate on, OrbitControls takes over: one finger orbits, two fingers pinch-zoom.
+   */
+  #bindTouch(canvas) {
+    const pts = new Map();
+    let mode = null, x0 = 0, y0 = 0, T0 = 0, pinch0 = 0;
+    const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' || this.controls.enableRotate) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 1) { mode = null; x0 = e.clientX; y0 = e.clientY; T0 = this.T; }
+      if (pts.size === 2) { mode = 'pinch'; pinch0 = dist(); }
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (mode === 'pinch' && pts.size === 2) {
+        const d = dist();
+        if (pinch0 > 0 && d > 0) this.zoom(pinch0 / d);
+        pinch0 = d;
+        return;
+      }
+      const dx = e.clientX - x0, dy = e.clientY - y0;
+      if (!mode && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) { mode = 'scrub'; if (this.playing) this.pause(); }
+      // a full-width swipe moves two stages
+      if (mode === 'scrub') this.seek(T0 + (dx / canvas.clientWidth) * 2);
+    });
+    const end = (e) => { pts.delete(e.pointerId); if (pts.size < 2 && mode === 'pinch') mode = null; if (!pts.size) mode = null; };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
   }
 
   #resize() {
@@ -175,7 +217,7 @@ export class CapacitorFactory {
     const key = (this.key = new THREE.DirectionalLight(0xffffff, 2.4));
     key.position.set(5, 9, 6);
     key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.mapSize.setScalar(this.mobile ? 512 : 1024);
     Object.assign(key.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 30 });
     key.shadow.bias = -0.0005;
     key.shadow.normalBias = 0.02;
@@ -815,7 +857,19 @@ export class CapacitorFactory {
     this.raf = requestAnimationFrame(step);
   }
 
+  /** Drop the render resolution on devices that cannot hold ~40 fps. */
+  #adapt(dt) {
+    if (!this.mobile || this.lowRes) return;
+    this.slowTime = dt > 1 / 40 ? (this.slowTime || 0) + dt : 0;
+    if (this.slowTime > 2) {
+      this.lowRes = true;
+      this.renderer.setPixelRatio(1);
+      this.#resize();
+    }
+  }
+
   #tick(dt) {
+    this.#adapt(dt);
     let T = this.T;
     if (this.playing && !this.ui.dragging) {
       if (T < N_STAGES) {
@@ -875,6 +929,8 @@ export class CapacitorFactory {
   }
   setRotateEnabled(on) {
     this.controls.enableRotate = on;
+    // touch: orbit mode also owns pinch-zoom; otherwise our own swipe/pinch handler does
+    if (this.mobile) this.controls.enableZoom = on || !!document.fullscreenElement;
     this.ui.canvas.style.touchAction = on ? 'none' : 'pan-y';
   }
   setZoomEnabled(on) { this.controls.enableZoom = on; }
