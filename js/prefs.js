@@ -105,10 +105,18 @@ function dismissSpotlight() {
   spot = null;
   el.classList.remove('is-in');
   window.removeEventListener('resize', placeSpotlight);
+  window.removeEventListener('scroll', onSpotScroll);
   document.removeEventListener('keydown', onSpotKey);
   setTimeout(() => el.remove(), reduced ? 0 : 400);
 }
 function onSpotKey(e) { if (e.key === 'Escape') dismissSpotlight(); }
+// the header shifts as the utility bar scrolls away: keep the ring and tip on the button,
+// and lift the dimmed backdrop so it never blocks reading
+let spotFrame = 0;
+function onSpotScroll() {
+  spot?.classList.add('is-settled');
+  if (!spotFrame) spotFrame = requestAnimationFrame(() => { spotFrame = 0; placeSpotlight(); });
+}
 
 function placeSpotlight() {
   if (!spot || !btn) return;
@@ -152,6 +160,7 @@ function showSpotlight() {
   $('.spot__ok', spot).addEventListener('click', () => { dismissSpotlight(); btn.focus(); });
   $('.spot__open', spot).addEventListener('click', () => setOpen(true));
   window.addEventListener('resize', placeSpotlight);
+  window.addEventListener('scroll', onSpotScroll, { passive: true });
   document.addEventListener('keydown', onSpotKey);
   placeSpotlight();
   requestAnimationFrame(() => spot?.classList.add('is-in'));
